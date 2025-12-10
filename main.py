@@ -18,7 +18,7 @@ ai_model = "gemini-3-pro-preview"
 github_token = Auth.Token(credentials["GithubToken"])
 g = Github(auth=github_token)
 
-repo = g.get_repo("Reponame/Here")
+repo = g.get_repo("spebelgenenst/ai_auto_maintain_test_repo")
 
 def ai(ai_model, prompt):
     response = client.models.generate_content(
@@ -27,6 +27,9 @@ def ai(ai_model, prompt):
     )
 
     return response
+
+def get_files():
+    file_list = json.load(repo.get_contents(path=".auto_maintain.json"))
 
 def fix_issue(issue):
 
