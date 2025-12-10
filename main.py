@@ -29,7 +29,12 @@ def ai(ai_model, prompt):
     return response
 
 def get_files():
-    file_list = json.load(repo.get_contents(path=".auto_maintain.json"))
+    data = repo.get_contents(path=".auto_maintain.json")
+    config = data.decoded_content.decode('utf-8')
+    file_list = config["maintain_file_list"]
+
+    for file_path in file_list:
+        pass
 
 def fix_issue(issue):
 
