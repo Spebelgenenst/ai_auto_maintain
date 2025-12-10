@@ -15,7 +15,7 @@ repo = g.get_repo("spebelgenenst/ai_auto_maintain_test_repo")
 #print(open_issues.totalCount)
 data = repo.get_contents(path=".auto_maintain.json")
 content = data.decoded_content.decode('utf-8')
-print(content)
+print(data.name)
 #for file in repo.get_contents(path=""):
 #    print(file)
 #for issue in open_issues:

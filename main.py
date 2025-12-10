@@ -2,7 +2,7 @@ import json
 from google import genai
 from github import Github
 from github import Auth
-import StringIO
+from io import StringIO
 from time import sleep
 
 #with open('prompt.md', 'r') as file:
@@ -15,38 +15,38 @@ client = genai.Client(api_key=credentials["geminiApiKey"])
 
 ai_model = "gemini-3-pro-preview"
 
-github_token = Auth.Token(credentials["GithubToken"])
+github_token = Auth.Token(credentials["githubToken"])
 g = Github(auth=github_token)
 
 repo = g.get_repo("spebelgenenst/ai_auto_maintain_test_repo")
 
-def ai(ai_model, prompt):
+def ai(ai_model, prompt, files):
     response = client.models.generate_content(
         model=ai_model,
-        contents=prompt
+        contents=[prompt,str(files)]
     )
 
     return response
 
 def get_files():
-    data = repo.get_contents(path=".auto_maintain.json")
-    config = data.decoded_content.decode('utf-8')
-    file_list = config["maintain_file_list"]
-
-    for file_path in file_list:
-        pass
+    data = repo.get_contents(path="")
+    files = []
+    for file in data:
+        files.append([file.path,file.content])
+    return files
 
 def fix_issue(issue):
-
+    print("getting files from github...")
+    files = get_files()
     print("waiting for ai to respond...")
-    response = ai(ai_model, prompt).text
-    if not response:
-        return
+    response = ai(ai_model, prompt, files).text
+    print(response)
 
 
 if __name__ ==  "__main__":
+    fix_issue("test")
     while True:
         open_issues = repo.get_issues(state='open')
         for issue in open_issues:
-            fix_issue()
-        sleep(30)
+            fix_issue(issue)
+        sleep(300)
