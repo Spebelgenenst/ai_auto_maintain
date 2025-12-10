@@ -1,7 +1,8 @@
 import json
 from google import genai
 from discord_webhook import DiscordWebhook, DiscordEmbed
-import PyGithub
+from github import Github
+from github import Auth
 import StringIO
 from time import sleep
 
