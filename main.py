@@ -1,6 +1,5 @@
 import json
 from google import genai
-from discord_webhook import DiscordWebhook, DiscordEmbed
 from github import Github
 from github import Auth
 import StringIO
@@ -14,7 +13,10 @@ with open('credentials.json', 'r') as file:
 
 client = genai.Client(api_key=credentials["geminiApiKey"])
 
-ai_model = "gemini-2.5-flash"
+ai_model = "gemini-3-pro-preview"
+
+github_token = Auth.Token(credentials["GithubToken"])
+g = Github(auth=github_token)
 
 repo = g.get_repo("Reponame/Here")
 
@@ -26,62 +28,17 @@ def ai(ai_model, prompt):
 
     return response
 
+def fix_issue(issue):
+
+    print("waiting for ai to respond...")
+    response = ai(ai_model, prompt).text
+    if not response:
+        return
+
+
 if __name__ ==  "__main__":
-
     while True:
-        issue_open = False
-        while not issue_open:
-            open_issues = repo.get_issues(state='open')
-            sleep(30)
-        
-        print("waiting for ai to respond...")
-        response = ai(ai_model, prompt).text
-        if not response:
-            continue
-        
-        print("executing code...")
-
-
-        code = extract_code(response)
-        if not code:
-            prompt_feedback = "No python code found, please write python code!"
-            print("error x_X: no code found")
-
-            webhook = DiscordWebhook(url=credentials["discordWebHook"], content=str(counter)+". response without python code")
-            webhook.add_file(file=response, filename="response.log")
-            webhook.execute()
-            
-            continue
-
-        webhook = DiscordWebhook(url=credentials["discordWebHook"])
-
-        embed = DiscordEmbed(title="code", description=f"Attempt {str(counter)}", color="fc7a84")
-
-        webhook.add_file(file=code, filename=f"code_{counter}.py")
-
-        webhook.add_embed(embed)
-        webhook.execute()
-
-
-        console_output, error = execute_code(code)
-
-        # log in discord webhook
-        print(f"last Console Output: {console_output}")
-
-        webhook = DiscordWebhook(url=credentials["discordWebHook"])
-
-        embed = DiscordEmbed(title="output", description=f"Attempt {str(counter)}", color="fc7a84")
-
-        webhook.add_file(file=console_output, filename=f"output_{counter}.log")
-        if error:
-            webhook.add_file(file=str(error), filename=f"error_{counter}.log")
-            embed.title = "output & errors"
-            embed.color = "ff0000"
-            print(f"error: {error}")
-
-        webhook.add_embed(embed)
-        webhook.execute()
-
-
-        prompt_feedback = f"last Console Output: {console_output}, error: {error}"
-        counter += 1
+        open_issues = repo.get_issues(state='open')
+        for issue in open_issues:
+            fix_issue()
+        sleep(30)

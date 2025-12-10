@@ -8,11 +8,15 @@ with open('credentials.json', 'r') as file:
 github_token = Auth.Token(credentials["GithubToken"])
 g = Github(auth=github_token)
 
-repo = g.get_repo("kaibuzz0/Termux-Mobile-BAREIRON-server")
+repo = g.get_repo("spebelgenenst/spebelgenenst")
 
 open_issues = repo.get_issues(state='open')
 
-for issue in open_issues:
-    print(issue.title+issue.body)
+#print(open_issues.totalCount)
+
+for file in repo.get_contents(path=""):
+    print(file)
+#for issue in open_issues:
+#    print(issue.title+issue.body)
 
 g.close
