@@ -13,6 +13,6 @@ repo = g.get_repo("kaibuzz0/Termux-Mobile-BAREIRON-server")
 open_issues = repo.get_issues(state='open')
 
 for issue in open_issues:
-    print(issue)
+    print(issue.title+issue.body)
 
 g.close
