@@ -12,7 +12,7 @@ repo = g.get_repo("spebelgenenst/ai_auto_maintain_test_repo")
 
 contents = repo.get_contents("test.txt")
 
-repo.update_file(contents.path, "1", "2", contents.sha)
+repo.update_file(contents.path, "1", "2", contents.sha, branch="ai")
 #repo.update_file(contents.path, "commit message", "content", contents.sha, branch="branch")
 
 #open_issues = repo.get_issues(state='open')
