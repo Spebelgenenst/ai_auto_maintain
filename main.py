@@ -49,6 +49,7 @@ def update_declarations(local_files):
 
 
 def update_github_file(file_path, commit_message, file_content):
+    manage_branch()
     content = repo.get_contents(file_path)
     repo.update_file(contents.path, commit_message, file_content, contents.sha, branch="ai_bugfixes")
 
@@ -59,6 +60,17 @@ def ai(ai_model, content, config):
         config=config
     )
     return response
+
+def manage_branch():
+    for branch in repo.get_branches():
+        if branch.name == "ai_bugfixes":
+            return
+    main_branch = repo.get_branch("main")
+
+    repo.create_git_ref(
+        ref=f"refs/heads/ai_bugfixes",
+        sha=main_branch.commit.sha
+    )
 
 def get_files():
     data = repo.get_contents(path="")
