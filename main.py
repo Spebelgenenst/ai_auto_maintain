@@ -61,9 +61,7 @@ def fix_issue(issue):
 
 
 if __name__ ==  "__main__":
-
     with Github(auth=github_token) as g:
-
         fix_issue("test")
 
         while True:
