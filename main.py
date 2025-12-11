@@ -26,7 +26,7 @@ def update_declarations(local_files):
         "parameters": {
             "type": "object",
             "properties": {
-                "file_name": {
+                "file_path": {
                     "type": "string",
                     "enum": local_files,
                     "description": "the name/path of the file that you want to change",
@@ -48,8 +48,8 @@ def update_declarations(local_files):
     return types.GenerateContentConfig(tools=[tools])
 
 
-def update_github_file(file_name, commit_message, file_content):
-    content = repo.get_contents(file_name)
+def update_github_file(file_path, commit_message, file_content):
+    content = repo.get_contents(file_path)
     repo.update_file(contents.path, commit_message, file_content, contents.sha, branch="ai_bugfixes")
 
 def ai(ai_model, content, config):
@@ -71,7 +71,13 @@ def get_files():
     return local_files
 
 
-def upload_files(local_files):
+def upload_files(local_files, content):
+    try:
+        for file in content:
+            client.files.delete(file=f"{repo.name}/{file}")
+    except:
+        pass
+
     content = []
     for local_file in local_files:
         uploaded_file = client.files.upload(file=f"{repo.name}/{local_file}")
@@ -79,10 +85,7 @@ def upload_files(local_files):
     return content
 
     
-def fix_issue(issue):
-    print("getting files from github...")
-    local_files = get_files()
-    content = upload_files(local_files)
+def fix_issue(issue, content):
     content.append(issue.title+issue.body)
     content.append(prompt)
     print("waiting for ai to respond...")
@@ -99,10 +102,17 @@ if __name__ ==  "__main__":
     with Github(auth=github_token) as g:
         #fix_issue("test")
         repo = g.get_repo(credentials["repoName"])
+        content = []
 
         while True:
             open_issues = repo.get_issues(state='open')
+            if open_issues.totalCount > 0:
+                print("getting files from github...")
+                local_files = get_files()
+                content = upload_files(local_files, content)
+
             for issue in open_issues:
-                fix_issue(issue)
+                fix_issue(issue, content)
                 quit()
+
             sleep(300)
