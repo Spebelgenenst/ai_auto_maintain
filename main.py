@@ -15,7 +15,7 @@ with open('credentials.json', 'r') as file:
 
 client = genai.Client(api_key=credentials["geminiApiKey"])
 
-ai_model = "gemini-2.5-flash" #"gemini-3-pro-preview"
+ai_model = "gemini-3-pro-preview"
 
 github_token = Auth.Token(credentials["githubToken"])
 
@@ -83,8 +83,7 @@ def fix_issue(issue):
     print("getting files from github...")
     local_files = get_files()
     content = upload_files(local_files)
-    content.append(issue.title)
-    content.append(issue.body)
+    content.append(issue.title+issue.body)
     content.append(prompt)
     print("waiting for ai to respond...")
     response = ai(ai_model, content, config=update_declarations(local_files)).text
