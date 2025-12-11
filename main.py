@@ -4,9 +4,10 @@ from github import Github
 from github import Auth
 from io import StringIO
 from time import sleep
+import os
 
-#with open('prompt.md', 'r') as file:
-#    prompt = file.read()
+with open('prompt.md', 'r') as file:
+    prompt = file.read()
 
 with open('credentials.json', 'r') as file:
     credentials = json.load(file)
@@ -23,23 +24,37 @@ repo = g.get_repo("spebelgenenst/ai_auto_maintain_test_repo")
 def ai(ai_model, prompt, files):
     response = client.models.generate_content(
         model=ai_model,
-        contents=[prompt,str(files)]
+        contents=[prompt,files]
     )
 
     return response
 
 def get_files():
     data = repo.get_contents(path="")
-    files = []
+    local_files = []
+    os.makedirs(repo.name, exist_ok=True)
     for file in data:
-        files.append([file.path,file.content])
-    return files
+        local_files.append(file.path)
+        with open(f"{repo.name}/{file.path}", "w") as f:
+            f.write(file.content)
+    return local_files
+
+def upload_files(local_files):
+    content = []
+    for local_file in local_files:
+        uploaded_file = client.files.upload(file=media / local_file)
+        content.append(uploaded_file)
+    return content
 
 def fix_issue(issue):
     print("getting files from github...")
-    files = get_files()
+    local_files = get_files()
+    content = upload_files(local_files)
+    content.append(issue.title)
+    content.append(issue.body)
+    content.append(prompt)
     print("waiting for ai to respond...")
-    response = ai(ai_model, prompt, files).text
+    response = ai(ai_model, content).text
     print(response)
 
 
