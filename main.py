@@ -17,14 +17,13 @@ client = genai.Client(api_key=credentials["geminiApiKey"])
 ai_model = "gemini-3-pro-preview"
 
 github_token = Auth.Token(credentials["githubToken"])
-g = Github(auth=github_token)
 
 repo = g.get_repo("spebelgenenst/ai_auto_maintain_test_repo")
 
-def ai(ai_model, prompt, files):
+def ai(ai_model, content):
     response = client.models.generate_content(
         model=ai_model,
-        contents=[prompt,files]
+        contents=content
     )
 
     return response
@@ -35,7 +34,7 @@ def get_files():
     local_files = []
     os.makedirs(repo.name, exist_ok=True)
     for file in data:
-        local_files.append(file.path)
+        local_files.append(f"{repo.name}/{file.path}")
         with open(f"{repo.name}/{file.path}", "w") as f:
             f.write(file.decoded_content.decode())
     return local_files
@@ -44,7 +43,7 @@ def get_files():
 def upload_files(local_files):
     content = []
     for local_file in local_files:
-        uploaded_file = client.files.upload(file=local_file[1])
+        uploaded_file = client.files.upload(file=local_file)
         content.append(uploaded_file)
     return content
 
@@ -57,14 +56,18 @@ def fix_issue(issue):
     content.append(issue.body)
     content.append(prompt)
     print("waiting for ai to respond...")
-    #response = ai(ai_model, content).text
+    response = ai(ai_model, content).text
     print(response)
 
 
 if __name__ ==  "__main__":
-    fix_issue("test")
-    while True:
-        open_issues = repo.get_issues(state='open')
-        for issue in open_issues:
-            fix_issue(issue)
-        sleep(300)
+
+    with Github(auth=github_token) as g:
+
+        fix_issue("test")
+
+        while True:
+            open_issues = repo.get_issues(state='open')
+            for issue in open_issues:
+                fix_issue(issue)
+            sleep(300)
