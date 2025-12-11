@@ -1,5 +1,6 @@
 import json
 from google import genai
+from google.genai import types
 from github import Github
 from github import Auth
 from io import StringIO
@@ -14,11 +15,11 @@ with open('credentials.json', 'r') as file:
 
 client = genai.Client(api_key=credentials["geminiApiKey"])
 
-ai_model = "gemini-3-pro-preview"
+ai_model = "gemini-2.5-flash" #"gemini-3-pro-preview"
 
 github_token = Auth.Token(credentials["githubToken"])
 
-def update_declarations():
+def update_declarations(local_files):
     update_github_file_declaration = {
         "name": "update_github_file",
         "description": "Updates a file",
@@ -43,8 +44,8 @@ def update_declarations():
         },
     }
 
-    tools = types.Tool(function_declarations=[set_light_values_declaration])
-    config = types.GenerateContentConfig(tools=[tools])
+    tools = types.Tool(function_declarations=[update_github_file_declaration])
+    return types.GenerateContentConfig(tools=[tools])
 
 
 def update_github_file(file_name, commit_message, file_content):
@@ -75,7 +76,6 @@ def upload_files(local_files):
     for local_file in local_files:
         uploaded_file = client.files.upload(file=f"{repo.name}/{local_file}")
         content.append(uploaded_file)
-    update_declarations()
     return content
 
     
@@ -87,7 +87,7 @@ def fix_issue(issue):
     content.append(issue.body)
     content.append(prompt)
     print("waiting for ai to respond...")
-    response = ai(ai_model, content).text
+    response = ai(ai_model, content, config=update_declarations(local_files)).text
     print("executing function calls")
     tool_call = response.candidates[0].content.parts[0].function_call
 
@@ -105,4 +105,5 @@ if __name__ ==  "__main__":
             open_issues = repo.get_issues(state='open')
             for issue in open_issues:
                 fix_issue(issue)
+                quit()
             sleep(300)
