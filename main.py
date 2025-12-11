@@ -29,6 +29,7 @@ def ai(ai_model, prompt, files):
 
     return response
 
+
 def get_files():
     data = repo.get_contents(path="")
     local_files = []
@@ -36,16 +37,18 @@ def get_files():
     for file in data:
         local_files.append(file.path)
         with open(f"{repo.name}/{file.path}", "w") as f:
-            f.write(file.content)
+            f.write(file.decoded_content.decode())
     return local_files
+
 
 def upload_files(local_files):
     content = []
     for local_file in local_files:
-        uploaded_file = client.files.upload(file=media / local_file)
+        uploaded_file = client.files.upload(file=local_file[1])
         content.append(uploaded_file)
     return content
 
+    
 def fix_issue(issue):
     print("getting files from github...")
     local_files = get_files()
@@ -54,7 +57,7 @@ def fix_issue(issue):
     content.append(issue.body)
     content.append(prompt)
     print("waiting for ai to respond...")
-    response = ai(ai_model, content).text
+    #response = ai(ai_model, content).text
     print(response)
 
 

@@ -13,10 +13,10 @@ repo = g.get_repo("spebelgenenst/ai_auto_maintain_test_repo")
 #open_issues = repo.get_issues(state='open')
 
 #print(open_issues.totalCount)
-data = repo.get_contents(path="")
-print(data)
-#for file in repo.get_contents(path=""):
-#    print(file)
+#data = repo.get_contents(path="")
+#print(data)
+for file in repo.get_contents(path=""):
+    print(file.decoded_content.decode())
 #for issue in open_issues:
 #    print(issue.title+issue.body)
 
