@@ -40,7 +40,7 @@ def update_declarations(local_files):
                     "description": "The content you want to replace the old content with"
                 },
             },
-            "required": ["file_name", "commit_message", "file_content"],
+            "required": ["file_path", "commit_message", "file_content"],
         },
     }
 
