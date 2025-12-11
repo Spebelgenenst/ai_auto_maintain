@@ -19,8 +19,8 @@ ai_model = "gemini-3-pro-preview"
 github_token = Auth.Token(credentials["githubToken"])
 
 def update_declarations():
-    update_file_declaration = {
-        "name": "update_file",
+    update_github_file_declaration = {
+        "name": "update_github_file",
         "description": "Updates a file",
         "parameters": {
             "type": "object",
@@ -47,19 +47,17 @@ def update_declarations():
     config = types.GenerateContentConfig(tools=[tools])
 
 
-def update_file(file_name, commit_message, file_content):
+def update_github_file(file_name, commit_message, file_content):
     content = repo.get_contents(file_name)
     repo.update_file(contents.path, commit_message, file_content, contents.sha, branch="ai_bugfixes")
 
 def ai(ai_model, content, config):
     response = client.models.generate_content(
         model=ai_model,
-        contents=content
+        contents=content,
         config=config
     )
-
     return response
-
 
 def get_files():
     data = repo.get_contents(path="")
@@ -90,7 +88,12 @@ def fix_issue(issue):
     content.append(prompt)
     print("waiting for ai to respond...")
     response = ai(ai_model, content).text
-    print(response)
+    print("executing function calls")
+    tool_call = response.candidates[0].content.parts[0].function_call
+
+    if tool_call.name == "update_github_file":
+        update_github_file(**tool_call.args)
+        print("file updated")
 
 
 if __name__ ==  "__main__":
