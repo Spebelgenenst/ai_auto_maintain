@@ -109,6 +109,8 @@ def fix_issue(issue, content):
         update_github_file(**tool_call.args)
         print("file updated")
 
+    issue.create_comment("ai bugfix done")
+
 
 if __name__ ==  "__main__":
     with Github(auth=github_token) as g:
@@ -118,6 +120,7 @@ if __name__ ==  "__main__":
 
         while True:
             open_issues = repo.get_issues(state='open')
+
             if open_issues.totalCount > 0:
                 print("getting files from github...")
                 local_files = get_files()
