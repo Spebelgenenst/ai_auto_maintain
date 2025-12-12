@@ -15,7 +15,7 @@ with open('credentials.json', 'r') as file:
 
 client = genai.Client(api_key=credentials["geminiApiKey"])
 
-ai_model = "gemini-3-pro-preview"
+ai_model = "gemini-3-pro-preview" #"gemini-2.5-flash-lite" #
 
 github_token = Auth.Token(credentials["githubToken"])
 
@@ -54,6 +54,8 @@ def update_github_file(file_path, commit_message, file_content):
     repo.update_file(contents.path, commit_message, file_content, contents.sha, branch="ai_bugfixes")
 
 def ai(ai_model, content, config):
+    print(content)
+    print(config)
     response = client.models.generate_content(
         model=ai_model,
         contents=content,
@@ -98,8 +100,7 @@ def upload_files(local_files, content):
 
     
 def fix_issue(issue, content):
-    content.append(issue.title+issue.body)
-    content.append(prompt)
+    content.append(prompt+"\n"+issue.title+"\n"+issue.body)
     print("waiting for ai to respond...")
     response = ai(ai_model, content, config=update_declarations(local_files)).text
     print("executing function calls")
