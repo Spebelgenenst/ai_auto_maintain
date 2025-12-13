@@ -13,9 +13,10 @@ with open('prompt.md', 'r') as file:
 with open('credentials.json', 'r') as file:
     credentials = json.load(file)
 
+print(credentials["geminiApiKey"])
 client = genai.Client(api_key=credentials["geminiApiKey"])
 
-ai_model = "gemini-3-pro-preview" #"gemini-2.5-flash-lite" #
+ai_model = "gemini-2.5-flash" #"gemini-2.5-flash-lite" #
 
 github_token = Auth.Token(credentials["githubToken"])
 
