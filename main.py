@@ -13,7 +13,6 @@ with open('prompt.md', 'r') as file:
 with open('credentials.json', 'r') as file:
     credentials = json.load(file)
 
-print(credentials["geminiApiKey"])
 client = genai.Client(api_key=credentials["geminiApiKey"])
 
 ai_model = "gemini-2.5-flash" #"gemini-2.5-flash-lite" #
@@ -48,15 +47,12 @@ def update_declarations(local_files):
     tools = types.Tool(function_declarations=[update_github_file_declaration])
     return types.GenerateContentConfig(tools=[tools])
 
-
 def update_github_file(file_path, commit_message, file_content):
     manage_branch()
     content = repo.get_contents(file_path)
     repo.update_file(contents.path, commit_message, file_content, contents.sha, branch="ai_bugfixes")
 
 def ai(ai_model, content, config):
-    print(content)
-    print(config)
     response = client.models.generate_content(
         model=ai_model,
         contents=content,
@@ -104,6 +100,7 @@ def fix_issue(issue, content):
     content.append(prompt+"\n"+issue.title+"\n"+issue.body)
     print("waiting for ai to respond...")
     response = ai(ai_model, content, config=update_declarations(local_files)).text
+    print(response)
     print("executing function calls")
     tool_call = response.candidates[0].content.parts[0].function_call
 
