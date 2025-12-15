@@ -28,6 +28,25 @@ ai_model = "gemini-2.5-flash" #"gemini-2.5-flash-lite" #
 github_token = Auth.Token(credentials["githubToken"])
 
 def update_declarations(local_files):
+    get_file_declaration = {
+        "name": "get_file",
+        "description": "Gives you the file you need",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "file_path": {
+                    "type": "string",
+                    "enum": local_files,
+                    "description": "the name/path of the file that you want",
+                }
+            },
+            "required": ["file_path"],
+        },
+    }
+
+    return update_github_file_declaration
+
+def update_declarations(local_files):
     update_github_file_declaration = {
         "name": "update_file",
         "description": "Updates a file",
@@ -51,8 +70,8 @@ def update_declarations(local_files):
             "required": ["file_path", "commit_message", "file_content"],
         },
     }
-    
-    return tools_declaration(update_github_file_declaration)
+
+    return update_github_file_declaration
 
 def tools_declaration(declaration):
     tools = types.Tool(function_declarations=[declaration])
@@ -122,10 +141,11 @@ def fix_issue(issue, content):
 
     issue.create_comment("ai bugfix done")
 
+def ask_for_files(issue):
+
 
 if __name__ ==  "__main__":
     with Github(auth=github_token) as g:
-        #fix_issue("test")
         repo = g.get_repo(credentials["repoName"])
         content = []
 
@@ -133,7 +153,6 @@ if __name__ ==  "__main__":
             open_issues = repo.get_issues(state='open')
 
             if open_issues.totalCount > 0:
-                print("getting files from github...")
                 local_files = get_files()
                 content = upload_files(local_files, content)
 
