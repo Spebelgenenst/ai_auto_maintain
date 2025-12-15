@@ -141,7 +141,9 @@ def fix_issue(issue, content):
 
     issue.create_comment("ai bugfix done")
 
-def ask_for_files(issue):
+def ask_for_files(issue, local_files):
+    local_files = get_files()
+    content = upload_files(local_files, content)
 
 
 if __name__ ==  "__main__":
@@ -152,11 +154,8 @@ if __name__ ==  "__main__":
         while True:
             open_issues = repo.get_issues(state='open')
 
-            if open_issues.totalCount > 0:
-                local_files = get_files()
-                content = upload_files(local_files, content)
-
             for issue in open_issues:
+                ask_for_files()
                 fix_issue(issue, content)
                 quit()
 
