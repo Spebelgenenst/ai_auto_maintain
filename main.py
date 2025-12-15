@@ -7,11 +7,19 @@ from io import StringIO
 from time import sleep
 import os
 
-with open('prompt.md', 'r') as file:
-    prompt = file.read()
+try:
+    with open('prompt.md', 'r') as file:
+        prompt = file.read()
+except FileNotFoundError:
+    print("prompt.md not found! Please follow the docs :33")
+    quit()
 
-with open('credentials.json', 'r') as file:
-    credentials = json.load(file)
+try:
+    with open('credentials.json', 'r') as file:
+        credentials = json.load(file)
+except FileNotFoundError:
+    print("credentials.json not found! Please follow the docs :33")
+    quit()
 
 client = genai.Client(api_key=credentials["geminiApiKey"])
 
@@ -21,7 +29,7 @@ github_token = Auth.Token(credentials["githubToken"])
 
 def update_declarations(local_files):
     update_github_file_declaration = {
-        "name": "update_github_file",
+        "name": "update_file",
         "description": "Updates a file",
         "parameters": {
             "type": "object",
@@ -43,9 +51,13 @@ def update_declarations(local_files):
             "required": ["file_path", "commit_message", "file_content"],
         },
     }
+    
+    return tools_declaration(update_github_file_declaration)
 
-    tools = types.Tool(function_declarations=[update_github_file_declaration])
+def tools_declaration(declaration):
+    tools = types.Tool(function_declarations=[declaration])
     return types.GenerateContentConfig(tools=[tools])
+
 
 def update_github_file(file_path, commit_message, file_content):
     manage_branch()
@@ -104,7 +116,7 @@ def fix_issue(issue, content):
     print("executing function calls")
     tool_call = response.candidates[0].content.parts[0].function_call
 
-    if tool_call.name == "update_github_file":
+    if tool_call.name == "update_file":
         update_github_file(**tool_call.args)
         print("file updated")
 
