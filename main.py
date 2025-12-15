@@ -8,14 +8,21 @@ from time import sleep
 import os
 
 try:
-    with open('prompt.md', 'r') as file:
+    with open("prompt.md", "r") as file:
         prompt = file.read()
 except FileNotFoundError:
     print("prompt.md not found! Please follow the docs :33")
     quit()
 
 try:
-    with open('credentials.json', 'r') as file:
+    with open("prompt_get_files.md", "r") as file:
+        prompt = file.read()
+except FileNotFoundError:
+    print("prompt_get_files.md not found! Please follow the docs :33")
+    quit()
+
+try:
+    with open("credentials.json", "r") as file:
         credentials = json.load(file)
 except FileNotFoundError:
     print("credentials.json not found! Please follow the docs :33")
@@ -27,7 +34,7 @@ ai_model = "gemini-2.5-flash" #"gemini-2.5-flash-lite" #
 
 github_token = Auth.Token(credentials["githubToken"])
 
-def update_declarations(local_files):
+def get_get_files_declarations(local_files):
     get_file_declaration = {
         "name": "get_file",
         "description": "Gives you the file you need",
@@ -46,7 +53,7 @@ def update_declarations(local_files):
 
     return update_github_file_declaration
 
-def update_declarations(local_files):
+def get_update_files_declarations(local_files):
     update_github_file_declaration = {
         "name": "update_file",
         "description": "Updates a file",
@@ -142,20 +149,20 @@ def fix_issue(issue, content):
     issue.create_comment("ai bugfix done")
 
 def ask_for_files(issue, local_files):
+    response = ai(ai_model=ai_model, content=prompt+str(local_files)+"\n"+issue.title+"\n"+issue.body, config=None)
     local_files = get_files()
     content = upload_files(local_files, content)
-
+    return content
 
 if __name__ ==  "__main__":
     with Github(auth=github_token) as g:
         repo = g.get_repo(credentials["repoName"])
-        content = []
 
         while True:
-            open_issues = repo.get_issues(state='open')
+            open_issues = repo.get_issues(state="open")
 
             for issue in open_issues:
-                ask_for_files()
+                content = ask_for_files()
                 fix_issue(issue, content)
                 quit()
 
