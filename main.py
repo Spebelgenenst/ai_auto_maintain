@@ -149,7 +149,8 @@ def fix_issue(issue, content):
     issue.create_comment("ai bugfix done")
 
 def ask_for_files(issue, local_files):
-    response = ai(ai_model=ai_model, content=prompt+str(local_files)+"\n"+issue.title+"\n"+issue.body, config=None)
+    content = prompt+str(local_files)+"\n"+issue.title+"\n"+issue.body
+    response = ai(ai_model=ai_model, content=content, config=None)
     local_files = get_files()
     content = upload_files(local_files, content)
     return content
