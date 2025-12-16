@@ -124,6 +124,7 @@ class github_action():
             f.write(file.decoded_content.decode())
         return local_file
 
+
 class Main():
 
     def fix_issue(self, issue, file):
