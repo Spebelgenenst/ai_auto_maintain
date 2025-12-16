@@ -11,7 +11,7 @@ try:
     with open("prompt.md", "r") as file:
         prompt = file.read()
 
-    with open("prompt_get_files.md", "r") as file:
+    with open("prompt_get_file.md", "r") as file:
         prompt_get_files = file.read()
 
     with open("credentials.json", "r") as file:
@@ -27,7 +27,7 @@ ai_model = "gemini-2.5-flash" #"gemini-2.5-flash-lite" #
 
 github_token = Auth.Token(credentials["githubToken"])
 
-class ai():
+class Ai():
     def get_get_files_declarations(self, files):
         get_file_declaration = {
             "name": "get_file",
@@ -45,7 +45,7 @@ class ai():
             },
         }
 
-        return self.update_github_file_declaration(get_file_declaration)
+        return self.tools_declaration(get_file_declaration)
 
     def get_update_files_declarations(self, local_file):
         update_github_file_declaration = {
@@ -130,7 +130,7 @@ class Main():
         content = file
         content.append(prompt+"\n"+issue.title+"\n"+issue.body)
         print("waiting for ai to respond...")
-        response = ai.ai(ai_model, content, config=ai.get_update_files_declarations(file)).text
+        response = Ai.ai(ai_model, content, config=ai.get_update_files_declarations(file)).text
         print(response)
         print("executing function calls")
         tool_call = response.candidates[0].content.parts[0].function_call
@@ -142,15 +142,15 @@ class Main():
         issue.create_comment("ai bugfix done")
 
     def ask_for_files(self, issue, files):
-        content = prompt+files+"\n"+issue.title+"\n"+issue.body
-        response = ai.ai(ai_model=ai_model, content=content, config=ai.get_get_files_declarations(files=files))
+        content = prompt+str(files)+"\n"+issue.title+"\n"+issue.body
+        response = Ai().ai(ai_model=ai_model, content=content, config=Ai().get_get_files_declarations(files=files))
 
         tool_call = response.candidates[0].content.parts[0].function_call
 
         if tool_call.name == "get_file":
             local_file = github_action.get_file(**tool_call.args)
             print("file downloaded")
-            file = ai.upload_file(local_file)
+            file = Ai.upload_file(local_file)
             print("file uploaded")
 
         return file
