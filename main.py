@@ -134,25 +134,36 @@ class Main():
         response = Ai.ai(ai_model, content, config=ai.get_update_files_declarations(file)).text
         print(response)
         print("executing function calls")
-        tool_call = response.candidates[0].content.parts[0].function_call
 
-        if tool_call.name == "update_file":
-            github_action.update_file(**tool_call.args)
-            print("file updated")
+        function_call = response.candidates[0].content.parts[0].function_call
+        if function_call:
+            if function_call.name == "update_file":
+                github_action.update_file(**function_call.args)
+                print("file updated")
+        else:
+            print("no function called")
+            quit()
+            
 
         issue.create_comment("ai bugfix done")
 
     def ask_for_files(self, issue, files):
         content = prompt+str(files)+"\n"+issue.title+"\n"+issue.body
-        response = Ai().ai(ai_model=ai_model, content=content, config=Ai().get_get_files_declarations(files=files))
+        config = Ai().get_get_files_declarations(files=files)
+        print(config)
+        response = Ai().ai(ai_model=ai_model, content=content, config=config)
 
-        tool_call = response.candidates[0].content.parts[0].function_call
+        function_call = response.candidates[0].content.parts[0].function_call
+        if function_call:
 
-        if tool_call.name == "get_file":
-            local_file = github_action.get_file(**tool_call.args)
-            print("file downloaded")
-            file = Ai.upload_file(local_file)
-            print("file uploaded")
+            if function_call.name == "get_file":
+                local_file = github_action.get_file(**function_call.args)
+                print("file downloaded")
+                file = Ai.upload_file(local_file)
+                print("file uploaded")
+        else:
+            print("no function called")
+            quit()
 
         return file
 
