@@ -1,1 +1,1 @@
-Kümmere dich um den Fehler.  Rufe die funktion "update_github_file" auf um eine datei zu ändern.
+Kümmere dich um den Fehler.  Rufe die funktion update_file auf um eine datei zu ändern.

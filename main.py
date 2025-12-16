@@ -10,22 +10,15 @@ import os
 try:
     with open("prompt.md", "r") as file:
         prompt = file.read()
-except FileNotFoundError:
-    print("prompt.md not found! Please follow the docs :33")
-    quit()
 
-try:
     with open("prompt_get_files.md", "r") as file:
-        prompt = file.read()
-except FileNotFoundError:
-    print("prompt_get_files.md not found! Please follow the docs :33")
-    quit()
+        prompt_get_files = file.read()
 
-try:
     with open("credentials.json", "r") as file:
         credentials = json.load(file)
+
 except FileNotFoundError:
-    print("credentials.json not found! Please follow the docs :33")
+    print("Some File not found! Please follow the docs :33")
     quit()
 
 client = genai.Client(api_key=credentials["geminiApiKey"])
