@@ -11,9 +11,6 @@ try:
     with open("prompt.md", "r") as file:
         prompt = file.read()
 
-    with open("prompt_get_file.md", "r") as file:
-        prompt_get_files = file.read()
-
     with open("credentials.json", "r") as file:
         credentials = json.load(file)
 
@@ -28,26 +25,7 @@ ai_model = "gemini-2.5-flash" #"gemini-2.5-flash-lite"
 github_token = Auth.Token(credentials["githubToken"])
 
 class Ai():
-    def get_get_files_declarations(self, files):
-        get_file_declaration = {
-            "name": "get_file",
-            "description": "Gives you the file you need",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "file_path": {
-                        "type": "string",
-                        "enum": files,
-                        "description": "the name/path of the file that you want",
-                    }
-                },
-                "required": ["file_path"],
-            },
-        }
-
-        return self.tools_declaration(get_file_declaration)
-
-    def get_update_files_declarations(self, local_file):
+    def get_declarations(self, local_file):
         update_github_file_declaration = {
             "name": "update_file",
             "description": "Updates a file",
@@ -72,10 +50,26 @@ class Ai():
             },
         }
 
-        return self.update_github_file_declaration(update_github_file_declaration)
+        get_file_declaration = {
+            "name": "get_file",
+            "description": "Gives you the file you need",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "file_path": {
+                        "type": "string",
+                        "enum": local_file,
+                        "description": "the name/path of the file that you want",
+                    }
+                },
+                "required": ["file_path"],
+            },
+        }
+
+        return self.tools_declaration([update_github_file_declaration, get_file_declaration])
 
     def tools_declaration(self, declaration):
-        tools = types.Tool(function_declarations=[declaration])
+        tools = types.Tool(function_declarations=declaration)
         return types.GenerateContentConfig(tools=[tools])
 
     def ai(self, ai_model, content, config):
@@ -100,12 +94,12 @@ class Ai():
 
 class github_action():
 
-    def update_file(self, file_path, commit_message, file_content):
-        self.manage_branch()
+    def update_file(self, file_path, commit_message, file_content, repo):
+        self.manage_branch(repo)
         content = repo.get_contents(file_path)
-        repo.update_file(contents.path, commit_message, file_content, contents.sha, branch="ai_bugfixes")
+        repo.update_file(content.path, commit_message, file_content, content.sha, branch="ai_bugfixes")
 
-    def manage_branch(self):
+    def manage_branch(self, repo):
         for branch in repo.get_branches():
             if branch.name == "ai_bugfixes":
                 return
@@ -116,7 +110,7 @@ class github_action():
             sha=main_branch.commit.sha
         )
 
-    def get_files(self, file_path):
+    def get_file(self, repo, file_path):
         data = repo.get_contents(path=file_path)
         local_file = [file_path]
         os.makedirs(repo.name, exist_ok=True)
@@ -165,10 +159,24 @@ class Main():
 
         return file
 
-    def ai_cycle(self, file_paths, issue):
+    def ai_cycle(self, file_paths, issue, file, config, repo):
+        content = prompt+"\n"+issue.title+"\n"+issue.body
+        if file:
+            content.append(file)
+
+        response = Ai().ai(ai_model=ai_model, content=content, config=config)
+
+        function_call = response.candidates[0].content.parts[0].function_call
+        if function_call:
+            if function_call.name == "update_file":
+                github_action().update_file(**function_call.args, repo=repo)
+
+            if function_call.name == "get_file":
+                local_file = github_action().get_file(**function_call.args, repo=repo)
+                file = Ai.upload_file(local_file)
+                return file
         
-        
-        pass
+        return None
 
     def __init__(self):
         with Github(auth=github_token) as g:
@@ -179,8 +187,11 @@ class Main():
 
                 for issue in open_issues:
                     file_paths = [file.path for file in repo.get_contents("")]
+                    file = None
+                    issue_closed = False
+                    config = Ai().get_declarations(file_paths)
                     while True:
-                        self.ai_cycle(file_paths, issue)
+                        file = self.ai_cycle(file_paths, issue, file, config, repo)
                         
                         if issue_closed:
                             issue.create_comment("ai bugfix done :3")
