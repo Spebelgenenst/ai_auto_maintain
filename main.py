@@ -18,12 +18,12 @@ try:
         credentials = json.load(file)
 
 except FileNotFoundError:
-    print("Some File not found! Please follow the docs :33")
+    print("Some File not found! Please follow the docs :3")
     quit()
 
 client = genai.Client(api_key=credentials["geminiApiKey"])
 
-ai_model = "gemini-2.5-flash" #"gemini-2.5-flash-lite" #
+ai_model = "gemini-2.5-flash" #"gemini-2.5-flash-lite"
 
 github_token = Auth.Token(credentials["githubToken"])
 
@@ -126,7 +126,6 @@ class github_action():
 
 
 class Main():
-
     def fix_issue(self, issue, file):
         content = file
         content.append(prompt+"\n"+issue.title+"\n"+issue.body)
@@ -166,6 +165,11 @@ class Main():
 
         return file
 
+    def ai_cycle(self, file_paths, issue):
+        
+        
+        pass
+
     def __init__(self):
         with Github(auth=github_token) as g:
             repo = g.get_repo(credentials["repoName"])
@@ -175,9 +179,12 @@ class Main():
 
                 for issue in open_issues:
                     file_paths = [file.path for file in repo.get_contents("")]
-                    content = self.ask_for_files(issue=issue, files=file_paths)
-                    self.fix_issue(issue, content)
-                    quit()
+                    while True:
+                        self.ai_cycle(file_paths, issue)
+                        
+                        if issue_closed:
+                            issue.create_comment("ai bugfix done :3")
+                            break
 
                 sleep(300)
 

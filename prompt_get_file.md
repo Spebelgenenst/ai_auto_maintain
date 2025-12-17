@@ -1,1 +1,0 @@
-Kümmere dich um den Fehler. Welche datei brauchst du? Rufe die funktion get_file auf um eine datei zu ändern.
