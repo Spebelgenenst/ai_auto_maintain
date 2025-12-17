@@ -150,7 +150,6 @@ class Main():
     def ask_for_files(self, issue, files):
         content = prompt+str(files)+"\n"+issue.title+"\n"+issue.body
         config = Ai().get_get_files_declarations(files=files)
-        print(config)
         response = Ai().ai(ai_model=ai_model, content=content, config=config)
 
         function_call = response.candidates[0].content.parts[0].function_call
