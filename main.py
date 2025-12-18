@@ -71,7 +71,7 @@ class Ai():
             "description": "call this function if you are done"
         }
 
-        return self.tools_declaration([update_github_file_declaration, get_file_declaration])
+        return self.tools_declaration([update_github_file_declaration, get_file_declaration, end_cycle_declaration])
 
     def tools_declaration(self, declaration):
         tools = types.Tool(function_declarations=declaration)
@@ -127,7 +127,7 @@ class Main():
     def ai_cycle(self, file_paths, issue, file, config, repo):
         content = prompt+"\n"+issue.title+"\n"+issue.body
         if file:
-            content.append(file)
+            content = [content, file]
         issue_done = False
         file = None
 
@@ -149,7 +149,7 @@ class Main():
                 issue_done = True
 
         
-        return None, file
+        return file, issue_done
 
     def __init__(self):
         with Github(auth=github_token) as g:
@@ -170,7 +170,6 @@ class Main():
                         file, issue_done = self.ai_cycle(file_paths, issue, file, config, repo)
                         
                         if issue_done:
-                            print("ai bugfix done :3")
                             break
 
                 sleep(300)
