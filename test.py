@@ -10,11 +10,11 @@ g = Github(auth=github_token)
 
 repo = g.get_repo("spebelgenenst/ai_auto_maintain_test_repo")
 
-print(repo.get_branch(branch="ai_bugfixes"))
+#print(repo.get_branch(branch="ai_bugfixes"))
 
-#contents = repo.get_contents("test.txt")
+contents = repo.get_contents("test.txt", ref="ai_bugfixes")
 
-#repo.update_file(contents.path, "1", "2", contents.sha, branch="ai")
+repo.update_file(contents.path, "1", "2", contents.sha, branch="ai_bugfixes")
 #repo.update_file(contents.path, "commit message", "content", contents.sha, branch="branch")
 
 #open_issues = repo.get_issues(state='open')

@@ -43,7 +43,7 @@ class Ai():
                     },
                     "file_content": {
                         "type": "string",
-                        "description": "The content you want to replace the old content with"
+                        "description": "the content you want to replace the old content with"
                     },
                 },
                 "required": ["file_path", "commit_message", "file_content"],
@@ -68,7 +68,18 @@ class Ai():
 
         end_cycle_declaration = {
             "name": "end_cycle",
-            "description": "call this function if you are done"
+            "description": "call this function if you are done",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "issue_comment": {
+                        "type": "string",
+                        "description": "comment under the issue",
+                    }
+                },
+                "required": ["issue_comment"],
+            },
+            
         }
 
         return self.tools_declaration([update_github_file_declaration, get_file_declaration, end_cycle_declaration])
@@ -95,26 +106,31 @@ class Ai():
 
 class github_action():
 
-    def update_file(self, file_path, commit_message, file_content, repo):
+    def update_file(self, file_path, commit_message, file_content, repo, branch):
         print(f"updating file {file_path}")
-        self.manage_branch(repo)
-        content = repo.get_contents(file_path, ref="ai_bugfixes")
-        repo.update_file(file_path, commit_message, file_content, content.sha, branch="ai_bugfixes")
+        self.manage_branch(repo, branch)
+        content = repo.get_contents(file_path, ref=branch)
+        print(file_content)
+        repo.update_file(content.path, commit_message, file_content, content.sha, branch=branch)
 
-    def manage_branch(self, repo):
+    def manage_branch(self, repo, branch):
         for branch in repo.get_branches():
-            if branch.name == "ai_bugfixes":
+            if branch.name == branch:
                 return
         main_branch = repo.get_branch("main")
 
         repo.create_git_ref(
-            ref=f"refs/heads/ai_bugfixes",
+            ref="refs/heads/" + branch,
             sha=main_branch.commit.sha
         )
 
-    def get_file(self, repo, file_path):
+    def get_file(self, repo, file_path, branch):
         print(f"downloading file {file_path}")
-        data = repo.get_contents(path=file_path)
+        try:
+            data = repo.get_contents(path=file_path, branch=branch)
+        except:
+            data = repo.get_contents(path=file_path)
+    
         local_file = file_path
         os.makedirs(repo.name, exist_ok=True)
         with open(f"{repo.name}/{file_path}", "w") as f:
@@ -124,7 +140,7 @@ class github_action():
 
 class Main():
 
-    def ai_cycle(self, file_paths, issue, file, config, repo):
+    def ai_cycle(self, file_paths, issue, file, config, repo, branch):
         content = prompt+"\n"+issue.title+"\n"+issue.body
         if file:
             content = [content, file]
@@ -138,14 +154,15 @@ class Main():
         function_call = response.candidates[0].content.parts[0].function_call
         if function_call:
             if function_call.name == "update_file":
-                github_action().update_file(**function_call.args, repo=repo)
+                github_action().update_file(**function_call.args, repo=repo, branch=branch)
 
             if function_call.name == "get_file":
-                local_file = github_action().get_file(**function_call.args, repo=repo)
+                local_file = github_action().get_file(**function_call.args, repo=repo, branch=branch)
                 file = Ai().upload_file(local_file, repo=repo)
 
             if function_call.name == "end_cycle":
-                issue.create_comment("ai bugfix done :3")
+                issue.create_comment(function_call.args)
+                issue.add_to_labels("ai bugfix done")
                 issue_done = True
 
         
@@ -154,12 +171,14 @@ class Main():
     def __init__(self):
         with Github(auth=github_token) as g:
             repo = g.get_repo(credentials["repoName"])
+            branch = credentials["aiBugfixBranch"]
 
             while True:
                 open_issues = repo.get_issues(state="open")
 
                 for issue in open_issues:
-                    if "ai bugfix done :3" in issue.get_comments():
+
+                    if "ai bugfix done :3" in issue.get_labels():
                         continue
                     print("New issue")
 
@@ -167,9 +186,10 @@ class Main():
                     file = None
                     config = Ai().get_declarations(file_paths)
                     while True:
-                        file, issue_done = self.ai_cycle(file_paths, issue, file, config, repo)
+                        file, issue_done = self.ai_cycle(file_paths, issue, file, config, repo, branch)
                         
                         if issue_done:
+                            print("ai bugfix done :3")
                             break
 
                 sleep(300)
