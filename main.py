@@ -169,16 +169,10 @@ class Main():
         function_call = response.candidates[0].content.parts[0].function_call
         if function_call:
             if function_call.name == "update_file":
-                try:
-                    github_action().update_file(**function_call.args, repo=repo)
-                except:
-                    print("error while executing function call")
+                github_action().update_file(**function_call.args, repo=repo)
 
             if function_call.name == "get_file":
-                try:
-                    local_file = github_action().get_file(**function_call.args, repo=repo)
-                except:
-                    print("error while executing function call")
+                local_file = github_action().get_file(**function_call.args, repo=repo)
                 file = Ai.upload_file(local_file)
                 return file
         
