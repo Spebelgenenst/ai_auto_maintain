@@ -172,7 +172,7 @@ class Main():
     def __init__(self):
         with Github(auth=github_token) as g:
             repo = g.get_repo(credentials["repoName"])
-            ai_branch = credentials["aiBugfixBranch"]
+            ai_branch = credentials["aiBugFixBranch"]
 
             while True:
                 open_issues = repo.get_issues(state="open")
