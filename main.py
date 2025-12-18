@@ -86,11 +86,7 @@ class Ai():
         return response
     
     def upload_file(self, local_file, repo):
-        #try:
-        #    for file in content:
-        #        client.files.delete(file=f"{repo.name}/{file}")
-        #except:
-        #    pass
+        print("uploading file")
 
         uploaded_file = client.files.upload(file=f"{repo.name}/{local_file}")
         content = [uploaded_file]
@@ -100,6 +96,7 @@ class Ai():
 class github_action():
 
     def update_file(self, file_path, commit_message, file_content, repo):
+        print(f"updating file {file_path}")
         self.manage_branch(repo)
         content = repo.get_contents(file_path, ref="ai_bugfixes")
         repo.update_file(file_path, commit_message, file_content, content.sha, branch="ai_bugfixes")
@@ -116,6 +113,7 @@ class github_action():
         )
 
     def get_file(self, repo, file_path):
+        print(f"downloading file {file_path}")
         data = repo.get_contents(path=file_path)
         local_file = file_path
         os.makedirs(repo.name, exist_ok=True)
@@ -125,44 +123,6 @@ class github_action():
 
 
 class Main():
-    def fix_issue(self, issue, file):
-        content = file
-        content.append(prompt+"\n"+issue.title+"\n"+issue.body)
-        print("waiting for ai to respond...")
-        response = Ai.ai(ai_model, content, config=ai.get_update_files_declarations(file)).text
-        print(response)
-        print("executing function calls")
-
-        function_call = response.candidates[0].content.parts[0].function_call
-        if function_call:
-            if function_call.name == "update_file":
-                github_action.update_file(**function_call.args)
-                print("file updated")
-        else:
-            print("no function called")
-            quit()
-            
-
-        issue.create_comment("ai bugfix done")
-
-    def ask_for_files(self, issue, files):
-        content = prompt+str(files)+"\n"+issue.title+"\n"+issue.body
-        config = Ai().get_get_files_declarations(files=files)
-        response = Ai().ai(ai_model=ai_model, content=content, config=config)
-
-        function_call = response.candidates[0].content.parts[0].function_call
-        if function_call:
-
-            if function_call.name == "get_file":
-                local_file = github_action.get_file(**function_call.args)
-                print("file downloaded")
-                file = Ai.upload_file(local_file)
-                print("file uploaded")
-        else:
-            print("no function called")
-            quit()
-
-        return file
 
     def ai_cycle(self, file_paths, issue, file, config, repo):
         content = prompt+"\n"+issue.title+"\n"+issue.body
@@ -171,8 +131,10 @@ class Main():
         issue_done = False
         file = None
 
+        print("waiting for ai response")
         response = Ai().ai(ai_model=ai_model, content=content, config=config)
 
+        print("executing function calls")
         function_call = response.candidates[0].content.parts[0].function_call
         if function_call:
             if function_call.name == "update_file":
@@ -199,6 +161,7 @@ class Main():
                 for issue in open_issues:
                     if "ai bugfix done :3" in issue.get_comments():
                         continue
+                    print("New issue")
 
                     file_paths = [file.path for file in repo.get_contents("")]
                     file = None
@@ -207,7 +170,7 @@ class Main():
                         file, issue_done = self.ai_cycle(file_paths, issue, file, config, repo)
                         
                         if issue_done:
-                            print("issue done!")
+                            print("ai bugfix done :3")
                             break
 
                 sleep(300)
