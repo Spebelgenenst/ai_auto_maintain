@@ -66,6 +66,11 @@ class Ai():
             },
         }
 
+        end_cycle_declaration = {
+            "name": "end_cycle",
+            "description": "call this function if you are done"
+        }
+
         return self.tools_declaration([update_github_file_declaration, get_file_declaration])
 
     def tools_declaration(self, declaration):
@@ -96,8 +101,8 @@ class github_action():
 
     def update_file(self, file_path, commit_message, file_content, repo):
         self.manage_branch(repo)
-        content = repo.get_contents(file_path)
-        repo.update_file(content.path, commit_message, file_content, content.sha, branch="ai_bugfixes")
+        content = repo.get_contents(file_path, ref="ai_bugfixes")
+        repo.update_file(file_path, commit_message, file_content, content.sha, branch="ai_bugfixes")
 
     def manage_branch(self, repo):
         for branch in repo.get_branches():
@@ -163,6 +168,7 @@ class Main():
         content = prompt+"\n"+issue.title+"\n"+issue.body
         if file:
             content.append(file)
+        issue_done = False
 
         response = Ai().ai(ai_model=ai_model, content=content, config=config)
 
@@ -175,8 +181,13 @@ class Main():
                 local_file = github_action().get_file(**function_call.args, repo=repo)
                 file = Ai.upload_file(local_file)
                 return file
+
+            if function_call.name == "end_cycle":
+                issue.create_comment("ai bugfix done :3")
+                issue_done = True
+
         
-        return None
+        return None, issue_done
 
     def __init__(self):
         with Github(auth=github_token) as g:
@@ -186,15 +197,16 @@ class Main():
                 open_issues = repo.get_issues(state="open")
 
                 for issue in open_issues:
+                    if "ai bugfix done :3" in issue.get_comments():
+                        continue
+
                     file_paths = [file.path for file in repo.get_contents("")]
                     file = None
-                    issue_closed = False
                     config = Ai().get_declarations(file_paths)
                     while True:
-                        file = self.ai_cycle(file_paths, issue, file, config, repo)
+                        file, issue_done = self.ai_cycle(file_paths, issue, file, config, repo)
                         
-                        if issue_closed:
-                            issue.create_comment("ai bugfix done :3")
+                        if issue_done:
                             break
 
                 sleep(300)
