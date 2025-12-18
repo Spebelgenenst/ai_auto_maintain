@@ -85,7 +85,7 @@ class Ai():
         )
         return response
     
-    def upload_file(self, local_file):
+    def upload_file(self, local_file, repo):
         #try:
         #    for file in content:
         #        client.files.delete(file=f"{repo.name}/{file}")
@@ -117,10 +117,10 @@ class github_action():
 
     def get_file(self, repo, file_path):
         data = repo.get_contents(path=file_path)
-        local_file = [file_path]
+        local_file = file_path
         os.makedirs(repo.name, exist_ok=True)
         with open(f"{repo.name}/{file_path}", "w") as f:
-            f.write(file.decoded_content.decode())
+            f.write(data.decoded_content.decode())
         return local_file
 
 
@@ -169,6 +169,7 @@ class Main():
         if file:
             content.append(file)
         issue_done = False
+        file = None
 
         response = Ai().ai(ai_model=ai_model, content=content, config=config)
 
@@ -179,15 +180,14 @@ class Main():
 
             if function_call.name == "get_file":
                 local_file = github_action().get_file(**function_call.args, repo=repo)
-                file = Ai.upload_file(local_file)
-                return file
+                file = Ai().upload_file(local_file, repo=repo)
 
             if function_call.name == "end_cycle":
                 issue.create_comment("ai bugfix done :3")
                 issue_done = True
 
         
-        return None, issue_done
+        return None, file
 
     def __init__(self):
         with Github(auth=github_token) as g:
@@ -207,6 +207,7 @@ class Main():
                         file, issue_done = self.ai_cycle(file_paths, issue, file, config, repo)
                         
                         if issue_done:
+                            print("issue done!")
                             break
 
                 sleep(300)
