@@ -82,7 +82,7 @@ class Ai():
             
         }
 
-        return self.tools_declaration([update_github_file_declaration, get_file_declaration, end_cycle_declaration])
+        return self.tools_declaration([get_file_declaration, update_github_file_declaration, end_cycle_declaration])
 
     def tools_declaration(self, declaration):
         tools = types.Tool(function_declarations=declaration)
@@ -127,15 +127,15 @@ class github_action():
     def get_file(self, repo, file_path, ai_branch):
         print(f"downloading file {file_path}")
         try:
-            data = repo.get_contents(path=file_path, ai_branch=ai_branch)
+            data = repo.get_contents(path=file_path, ref=ai_branch)
         except:
             data = repo.get_contents(path=file_path)
     
-        local_file = file_path
+        print(data.decoded_content.decode())
         os.makedirs(repo.name, exist_ok=True)
-        with open(f"{repo.name}/{file_path}", "w") as f:
+        with open(f"{repo.name}/{data.path}", "w") as f:
             f.write(data.decoded_content.decode())
-        return local_file
+        return data.path
 
 
 class Main():
@@ -152,6 +152,7 @@ class Main():
 
         print("executing function calls")
         function_call = response.candidates[0].content.parts[0].function_call
+        print(function_call.name)
         if function_call:
             if function_call.name == "update_file":
                 github_action().update_file(**function_call.args, repo=repo, ai_branch=ai_branch)
