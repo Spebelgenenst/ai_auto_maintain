@@ -20,7 +20,7 @@ except FileNotFoundError:
 
 client = genai.Client(api_key=credentials["geminiApiKey"])
 
-ai_model = "gemini-2.5-flash" #"gemini-2.5-flash-lite"
+ai_model = "gemini-2.5-flash-lite" #"gemini-2.5-flash-lite"
 
 github_token = Auth.Token(credentials["githubToken"])
 
