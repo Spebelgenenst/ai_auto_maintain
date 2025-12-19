@@ -1,1 +1,1 @@
-Wenn du den Fehler sinnvoll findest, dann Kümmere dich um den Fehler. Rufe Funktionen auf um alle Dateien die du brauchst zu erhalten und die Dateien zu bearbeiten. Bist du fertig?
+Wenn du den Fehler sinnvoll findest, dann Kümmere dich um den Fehler. Rufe Funktionen auf um alle Dateien die du brauchst zu erhalten und die Dateien zu bearbeiten.
