@@ -66,23 +66,7 @@ class Ai():
             },
         }
 
-        end_cycle_declaration = {
-            "name": "end_cycle",
-            "description": "call this function if you are done",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "issue_comment": {
-                        "type": "string",
-                        "description": "comment under the issue",
-                    }
-                },
-                "required": ["issue_comment"],
-            },
-            
-        }
-
-        return self.tools_declaration([get_file_declaration, update_github_file_declaration, end_cycle_declaration])
+        return self.tools_declaration([get_file_declaration, update_github_file_declaration])
 
     def tools_declaration(self, declaration):
         tools = types.Tool(function_declarations=declaration)
@@ -141,7 +125,7 @@ class github_action():
 class Main():
 
     def ai_cycle(self, file_paths, issue, file, config, repo, ai_branch):
-        content = prompt+"\n"+issue.title+"\n"+issue.body
+        content = issue.title+"\n"+issue.body #prompt+"\n"+issue.title+"\n"+issue.body
         if file:
             content = [content, file]
         issue_done = False
@@ -160,14 +144,11 @@ class Main():
             if function_call.name == "get_file":
                 local_file = github_action().get_file(**function_call.args, repo=repo, ai_branch=ai_branch)
                 file = Ai().upload_file(local_file, repo=repo)
+        else:
+            print("end_cycle")
+            issue.add_to_labels("ai bugfix done")
+            issue_done = True
 
-            if function_call.name == "end_cycle":
-                print("end_cycle")
-                issue.create_comment(function_call.args)
-                issue.add_to_labels("ai bugfix done")
-                issue_done = True
-
-        
         return file, issue_done
 
     def __init__(self):

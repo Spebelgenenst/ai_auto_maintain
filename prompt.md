@@ -1,1 +1,1 @@
-Wenn du den Fehler sinnvoll findest, dann Kümmere dich um den Fehler. Rufe Funktionen auf um alle Dateien die du brauchst zu erhalten und die Dateien zu bearbeiten. Wenn du fertig bist, rufe die funktion end_cycle auf. 
+Wenn du den Fehler sinnvoll findest, dann Kümmere dich um den Fehler. Rufe Funktionen auf um alle Dateien die du brauchst zu erhalten und die Dateien zu bearbeiten. Bist du fertig?
