@@ -1,28 +1,30 @@
-import json
 from google import genai
 from google.genai import types
+
 from github import Github
 from github import Auth
+
 from io import StringIO
 from time import sleep
 import os
+import json
 
-try:
+try: #open files
     with open("prompt.md", "r") as file:
         prompt = file.read()
 
     with open("credentials.json", "r") as file:
         credentials = json.load(file)
 
-except FileNotFoundError:
+except FileNotFoundError: #error if files are missing
     print("Some File not found! Please follow the docs :3")
     quit()
 
-client = genai.Client(api_key=credentials["geminiApiKey"])
-
+#varibles
+client = genai.Client(api_key=credentials["geminiApiKey"]) 
 ai_model = "gemini-2.5-flash-lite" #"gemini-2.5-flash-lite"
-
 github_token = Auth.Token(credentials["githubToken"])
+ai_branch = credentials["aiBugFixBranch"]
 
 class Ai():
     def get_declarations(self, local_file):
@@ -97,7 +99,7 @@ class github_action():
         print(file_content)
         repo.update_file(content.path, commit_message, file_content, content.sha, branch=ai_branch)
 
-    def manage_branch(self, repo, ai_branch):
+    def manage_branch(self, repo, ai_branch): #checks if the ai bugfix branch exists and makes on if needed
         for branch in repo.get_branches():
             if branch.name == ai_branch:
                 return
@@ -108,7 +110,7 @@ class github_action():
             sha=main_branch.commit.sha
         )
 
-    def get_file(self, repo, file_path, ai_branch):
+    def get_file(self, repo, file_path, ai_branch): #download a file from github
         print(f"downloading file {file_path}")
         try:
             data = repo.get_contents(path=file_path, ref=ai_branch)
@@ -124,7 +126,7 @@ class github_action():
 
 class Main():
 
-    def ai_cycle(self, file_paths, issue, file, config, repo, ai_branch, function_call, result):
+    def ai_cycle(self, file_paths, issue, file, config, repo, ai_branch, function_call, result): #sry it is so messy :c
         content = []
 
         if function_call:
@@ -135,12 +137,12 @@ class Main():
 
             contents.append(response.candidates[0].content) # Append the content from the model's response.
             contents.append(types.Content(role="user", parts=[function_response_part])) # Append the function response
+        
         else:
             content.append(prompt+"\n"+issue.title+"\n"+issue.body)
         if file:
             content.append(file)
 
-        issue_done = False
         file = None
 
         print("waiting for ai response")
@@ -149,14 +151,17 @@ class Main():
         print("executing function calls")
         function_call = response.candidates[0].content.parts[0].function_call
         print(function_call.name)
+
         if function_call:
+            issue_done = False
+
             if function_call.name == "update_file":
                 github_action().update_file(**function_call.args, repo=repo, ai_branch=ai_branch)
 
             if function_call.name == "get_file":
                 local_file = github_action().get_file(**function_call.args, repo=repo, ai_branch=ai_branch)
                 file = Ai().upload_file(local_file, repo=repo)
-                
+
         else:
             print("end_cycle")
             issue.add_to_labels("ai bugfix done")
@@ -169,7 +174,6 @@ class Main():
     def __init__(self):
         with Github(auth=github_token) as g:
             repo = g.get_repo(credentials["repoName"])
-            ai_branch = credentials["aiBugFixBranch"]
 
             while True:
                 open_issues = repo.get_issues(state="open")
@@ -195,5 +199,5 @@ class Main():
 
                 sleep(300)
 
-if __name__ ==  "__main__":
+if __name__ ==  "__main__": #UwU
     Main()
