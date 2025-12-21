@@ -124,10 +124,22 @@ class github_action():
 
 class Main():
 
-    def ai_cycle(self, file_paths, issue, file, config, repo, ai_branch):
-        content = issue.title+"\n"+issue.body #prompt+"\n"+issue.title+"\n"+issue.body
+    def ai_cycle(self, file_paths, issue, file, config, repo, ai_branch, function_call, result):
+        content = []
+
+        if function_call:
+            function_response_part = types.Part.from_function_response(
+                name=function_call.name,
+                response={"result": result},
+            )
+
+            contents.append(response.candidates[0].content) # Append the content from the model's response.
+            contents.append(types.Content(role="user", parts=[function_response_part])) # Append the function response
+        else:
+            content.append(prompt+"\n"+issue.title+"\n"+issue.body)
         if file:
-            content = [content, file]
+            content.append(file)
+
         issue_done = False
         file = None
 
@@ -144,12 +156,15 @@ class Main():
             if function_call.name == "get_file":
                 local_file = github_action().get_file(**function_call.args, repo=repo, ai_branch=ai_branch)
                 file = Ai().upload_file(local_file, repo=repo)
+                
         else:
             print("end_cycle")
             issue.add_to_labels("ai bugfix done")
             issue_done = True
+            function_call = None
+            result = None
 
-        return file, issue_done
+        return file, function_call, issue_done
 
     def __init__(self):
         with Github(auth=github_token) as g:
@@ -168,8 +183,11 @@ class Main():
                     file_paths = [file.path for file in repo.get_contents("")]
                     file = None
                     config = Ai().get_declarations(file_paths)
+                    function_call = None
+                    result = None
+
                     while True:
-                        file, issue_done = self.ai_cycle(file_paths, issue, file, config, repo, ai_branch)
+                        file, function_call, issue_done, result = self.ai_cycle(file_paths, issue, file, config, repo, ai_branch, function_call, result)
                         
                         if issue_done:
                             print("ai bugfix done :3")
